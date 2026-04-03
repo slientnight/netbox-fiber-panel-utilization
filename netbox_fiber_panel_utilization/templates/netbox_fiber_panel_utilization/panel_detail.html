@@ -1,0 +1,181 @@
+{# Fiber Patch Panel Utilization - Detail Page #}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fiber Panel Utilization – {{ utilization.device_name }}</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="{% static 'netbox_fiber_panel_utilization/css/utilization.css' %}">
+</head>
+<body>
+<div class="container my-4">
+
+  {# ── Req 6.2: Panel summary section ── #}
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="card-title mb-0">{{ utilization.device_name }}</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        {# Contextual info: site, location, rack (omit when absent) #}
+        <div class="col-md-6">
+          <table class="table table-sm">
+            <tbody>
+              {% if utilization.site %}
+              <tr><th scope="row">Site</th><td>{{ utilization.site }}</td></tr>
+              {% endif %}
+              {% if utilization.location %}
+              <tr><th scope="row">Location</th><td>{{ utilization.location }}</td></tr>
+              {% endif %}
+              {% if utilization.rack %}
+              <tr><th scope="row">Rack</th><td>{{ utilization.rack }}</td></tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+
+        {# Utilization percentage + counts #}
+        <div class="col-md-6 text-center">
+          <span class="display-6 fw-bold">{{ utilization.utilization_percent }}%</span>
+          <div class="text-muted mb-3">Utilization</div>
+          <div class="row text-center">
+            <div class="col-4">
+              <div class="fw-bold">{{ utilization.used_ports }}</div>
+              <small class="text-muted">Connected</small>
+            </div>
+            <div class="col-4">
+              <div class="fw-bold">{{ utilization.total_ports }}</div>
+              <small class="text-muted">Total</small>
+            </div>
+            <div class="col-4">
+              <div class="fw-bold">{{ utilization.free_ports }}</div>
+              <small class="text-muted">Free</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# ── Req 6.3: Utilization bar with color thresholds ── #}
+      <div class="progress mt-3" style="height: 24px;">
+        <div class="progress-bar utilization-bar"
+             role="progressbar"
+             style="width: {{ utilization.utilization_percent }}%;"
+             data-utilization="{{ utilization.utilization_percent }}"
+             data-warning-threshold="{{ config.warning_threshold }}"
+             data-critical-threshold="{{ config.critical_threshold }}"
+             aria-valuenow="{{ utilization.utilization_percent }}"
+             aria-valuemin="0"
+             aria-valuemax="100">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ── Req 6.4: Per-module grid (conditional on show_module_breakdown) ── #}
+  {% if config.show_module_breakdown %}
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="card-title mb-0">Module Breakdown</h5>
+    </div>
+    <div class="card-body">
+      <table class="table table-sm table-hover">
+        <thead>
+          <tr>
+            <th>Bay</th>
+            <th>Module</th>
+            <th>Used</th>
+            <th>Total</th>
+            <th>Utilization</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for mod in utilization.modules %}
+          <tr>
+            <td>{{ mod.bay_name }}</td>
+            <td>{{ mod.module_model }}</td>
+            <td>{{ mod.used_ports }}</td>
+            <td>{{ mod.total_ports }}</td>
+            <td>
+              <div class="progress" style="height: 14px;">
+                <div class="progress-bar utilization-bar"
+                     role="progressbar"
+                     style="width: {{ mod.utilization_percent }}%;"
+                     data-utilization="{{ mod.utilization_percent }}"
+                     data-warning-threshold="{{ config.warning_threshold }}"
+                     data-critical-threshold="{{ config.critical_threshold }}"
+                     aria-valuenow="{{ mod.utilization_percent }}"
+                     aria-valuemin="0"
+                     aria-valuemax="100">
+                </div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── Req 6.5, 6.6: Front-port table (conditional on show_port_table) ── #}
+  {% if config.show_port_table %}
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="card-title mb-0">Front Ports</h5>
+    </div>
+    <div class="card-body">
+      <table class="table table-sm table-hover">
+        <thead>
+          <tr>
+            <th>Port</th>
+            <th>Module</th>
+            <th>Status</th>
+            <th>Far-End Device</th>
+            <th>Far-End Port</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for mod in utilization.modules %}
+            {% for port in mod.ports %}
+            <tr>
+              <td>{{ port.name }}</td>
+              <td>{{ mod.bay_name }}</td>
+              <td>
+                {% if port.cable %}
+                  <span class="badge bg-success">Connected</span>
+                {% else %}
+                  <span class="badge bg-secondary">Free</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if port.cable and port.far_end_device %}
+                  {{ port.far_end_device }}
+                {% else %}
+                  —
+                {% endif %}
+              </td>
+              <td>
+                {% if port.cable and port.far_end_port %}
+                  {{ port.far_end_port }}
+                {% else %}
+                  —
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          {% empty %}
+            <tr><td colspan="5" class="text-muted">No front ports found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<script src="{% static 'netbox_fiber_panel_utilization/js/utilization.js' %}"></script>
+</body>
+</html>

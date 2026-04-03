@@ -1,0 +1,32 @@
+/* Fiber Patch Panel Utilization - Styles */
+
+/* Base utilization progress bar */
+.utilization-bar {
+  transition: width 0.4s ease, background-color 0.3s ease;
+  border-radius: 0;
+}
+
+/* Color threshold classes (applied by JS based on warning/critical thresholds) */
+.utilization-green {
+  background-color: #198754; /* Bootstrap success green */
+}
+
+.utilization-yellow {
+  background-color: #ffc107; /* Bootstrap warning amber */
+  color: #000;
+}
+
+.utilization-red {
+  background-color: #dc3545; /* Bootstrap danger red */
+}
+
+/* Module breakdown mini bars */
+.table .progress {
+  background-color: #e9ecef;
+  border-radius: 0.25rem;
+}
+
+.table .progress .utilization-bar {
+  font-size: 0.7rem;
+  line-height: 14px;
+}

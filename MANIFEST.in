@@ -1,0 +1,4 @@
+include README.md
+include LICENSE
+recursive-include netbox_fiber_panel_utilization/templates *
+recursive-include netbox_fiber_panel_utilization/static *

@@ -1,0 +1,142 @@
+{# Fiber Patch Panel Utilization - Device Widget #}
+{% load static %}
+
+{% if error_message %}
+<div class="card">
+  <div class="card-header">
+    <h5 class="card-title">Fiber Panel Utilization</h5>
+  </div>
+  <div class="card-body">
+    <div class="alert alert-danger mb-0">{{ error_message }}</div>
+  </div>
+</div>
+
+{% elif empty_message %}
+<div class="card">
+  <div class="card-header">
+    <h5 class="card-title">Fiber Panel Utilization</h5>
+  </div>
+  <div class="card-body">
+    <div class="alert alert-warning mb-0">{{ empty_message }}</div>
+  </div>
+</div>
+
+{% elif utilization %}
+<div class="card">
+  <div class="card-header">
+    <h5 class="card-title">{{ utilization.device_name }}</h5>
+  </div>
+  <div class="card-body">
+    {# Req 5.2: Utilization percentage displayed prominently #}
+    <div class="text-center mb-3">
+      <span class="display-6 fw-bold">{{ utilization.utilization_percent }}%</span>
+      <div class="text-muted">Utilization</div>
+    </div>
+
+    {# Req 5.4, 5.5: Progress bar with data attributes for JS color thresholds #}
+    <div class="progress mb-3" style="height: 20px;">
+      <div class="progress-bar utilization-bar"
+           role="progressbar"
+           style="width: {{ utilization.utilization_percent }}%;"
+           data-utilization="{{ utilization.utilization_percent }}"
+           data-warning-threshold="{{ config.warning_threshold }}"
+           data-critical-threshold="{{ config.critical_threshold }}"
+           aria-valuenow="{{ utilization.utilization_percent }}"
+           aria-valuemin="0"
+           aria-valuemax="100">
+      </div>
+    </div>
+
+    {# Req 5.3: Connected, total, and free port counts #}
+    <div class="row text-center mb-3">
+      <div class="col-4">
+        <div class="fw-bold">{{ utilization.used_ports }}</div>
+        <small class="text-muted">Connected</small>
+      </div>
+      <div class="col-4">
+        <div class="fw-bold">{{ utilization.total_ports }}</div>
+        <small class="text-muted">Total</small>
+      </div>
+      <div class="col-4">
+        <div class="fw-bold">{{ utilization.free_ports }}</div>
+        <small class="text-muted">Free</small>
+      </div>
+    </div>
+
+    {# Req 5.7, 5.8: Contextual info (site, location, rack) when available #}
+    {% if utilization.site or utilization.location or utilization.rack %}
+    <table class="table table-sm mb-3">
+      <tbody>
+        {% if utilization.site %}
+        <tr>
+          <th scope="row">Site</th>
+          <td>{{ utilization.site }}</td>
+        </tr>
+        {% endif %}
+        {% if utilization.location %}
+        <tr>
+          <th scope="row">Location</th>
+          <td>{{ utilization.location }}</td>
+        </tr>
+        {% endif %}
+        {% if utilization.rack %}
+        <tr>
+          <th scope="row">Rack</th>
+          <td>{{ utilization.rack }}</td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+    {% endif %}
+
+    {# Req 5.6, 4.5, 4.6: Per-module breakdown (conditional on show_module_breakdown) #}
+    {% if config.show_module_breakdown %}
+    <h6 class="mt-3">Module Breakdown</h6>
+    <table class="table table-sm table-hover">
+      <thead>
+        <tr>
+          <th>Bay</th>
+          <th>Module</th>
+          <th>Used</th>
+          <th>Total</th>
+          <th>Utilization</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for mod in utilization.modules %}
+        <tr>
+          <td>{{ mod.bay_name }}</td>
+          <td>{{ mod.module_model }}</td>
+          <td>{{ mod.used_ports }}</td>
+          <td>{{ mod.total_ports }}</td>
+          <td>
+            <div class="progress" style="height: 14px;">
+              <div class="progress-bar utilization-bar"
+                   role="progressbar"
+                   style="width: {{ mod.utilization_percent }}%;"
+                   data-utilization="{{ mod.utilization_percent }}"
+                   data-warning-threshold="{{ config.warning_threshold }}"
+                   data-critical-threshold="{{ config.critical_threshold }}"
+                   aria-valuenow="{{ mod.utilization_percent }}"
+                   aria-valuemin="0"
+                   aria-valuemax="100">
+              </div>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
+    {# Req 5.9: Link to detail page #}
+    <a href="/plugins/fiber-patch-panel-utilization/{{ utilization.device_id }}/"
+       class="btn btn-sm btn-primary">
+      View Full Details
+    </a>
+  </div>
+</div>
+{% endif %}
+
+<link rel="stylesheet" href="{% static 'netbox_fiber_panel_utilization/css/utilization.css' %}">
+<script src="{% static 'netbox_fiber_panel_utilization/js/utilization.js' %}"></script>

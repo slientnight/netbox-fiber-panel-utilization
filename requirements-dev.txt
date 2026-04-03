@@ -1,0 +1,5 @@
+pytest>=7.0
+pytest-django>=4.5
+hypothesis>=6.0
+djangorestframework>=3.14
+Django>=4.2
